@@ -1,0 +1,139 @@
+alias: "Appliance Status: Dishwasher"
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - binary_sensor.appliance_state_dishwasher
+    to: "on"
+    alias: Dishwasher Begin Running
+  - platform: state
+    entity_id:
+      - binary_sensor.dishwasher_door_sensor
+    to: "on"
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+    alias: Dishwasher Door Open for 2 Minutes
+  - platform: state
+    entity_id:
+      - binary_sensor.appliance_state_dishwasher
+    from: "on"
+    to: "off"
+    id: Dishwasher Running to Not Running
+    alias: Dishwasher Changes From Washing to Not Washing
+condition: []
+action:
+  - choose:
+      - conditions:
+          - alias: Check If Dishwasher is Running and Door is Closed
+            condition: and
+            conditions:
+              - condition: state
+                entity_id: binary_sensor.appliance_state_dishwasher
+                state: "on"
+                alias: Check If Dishwasher is Running
+              - condition: state
+                entity_id: binary_sensor.dishwasher_door_sensor
+                state: "off"
+                alias: Check If Dishwasher is Closed
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.appliance_state_dishwasher_clean_status
+            data:
+              option: Washing
+            alias: Set Helper Status to Washing
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.0000021eea473b13
+            data:
+              background: white
+              payload:
+                - type: text
+                  value: Washing
+                  font: ppb.ttf
+                  x: 0
+                  "y": 33
+                  size: 62
+                  color: black
+            alias: Set e-ink Display to Washing
+        alias: "Dishwasher: Washing"
+      - conditions:
+          - condition: state
+            entity_id: binary_sensor.appliance_state_dishwasher
+            state: "off"
+            alias: Check Dishwasher is Not Running
+          - condition: state
+            entity_id: input_select.appliance_state_dishwasher_clean_status
+            state: Clean
+            alias: Check Dishwasher Status is Marked Clean
+          - condition: state
+            entity_id: binary_sensor.dishwasher_door_sensor
+            for:
+              hours: 0
+              minutes: 2
+              seconds: 0
+            state: "on"
+            alias: Check Dishwasher Door is Open For 2 Minutes
+        sequence:
+          - wait_for_trigger:
+              - platform: state
+                entity_id:
+                  - binary_sensor.dishwasher_door_sensor
+                to: "off"
+            timeout:
+              hours: 0
+              minutes: 10
+              seconds: 0
+              milliseconds: 0
+            alias: Wait For Dishwasher Door to Close
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.appliance_state_dishwasher_clean_status
+            data:
+              option: Dirty
+            alias: Set Helper Status to Dirty
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.0000021eea473b13
+            data:
+              background: black
+              payload:
+                - type: text
+                  value: Dirty
+                  font: ppb.ttf
+                  x: 0
+                  "y": 22
+                  size: 99
+                  color: white
+            alias: Set e-ink Display to Dirty
+        alias: "Dishwasher: Dirty"
+      - conditions:
+          - condition: trigger
+            id:
+              - Dishwasher Running to Not Running
+            alias: Triggered by Change from Washing to Not Washing
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: input_select.appliance_state_dishwasher_clean_status
+            data:
+              option: Clean
+            alias: Set Helper to Clean
+          - service: open_epaper_link.drawcustom
+            target:
+              entity_id: open_epaper_link.0000021eea473b13
+            data:
+              background: white
+              payload:
+                - type: text
+                  value: Clean
+                  font: ppb.ttf
+                  x: 0
+                  "y": 22
+                  size: 99
+                  color: red
+            alias: Set e-ink display to Clean
+        alias: "Dishwasher: Clean"
+mode: restart
