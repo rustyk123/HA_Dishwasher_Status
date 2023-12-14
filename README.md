@@ -44,6 +44,6 @@ Helpers<br>
 Automation:<br>
 
 Create automation using the code at this link:<br>
-https://gist.github.com/rustyk123/2b436d4a4254d5b6fab68f04a70c053a#file-gistfile1-txt<br>
+https://github.com/rustyk123/HA_Dishwasher_Status/blob/main/Automation.yaml<br>
 
 update the entities to match your entities.<br>
